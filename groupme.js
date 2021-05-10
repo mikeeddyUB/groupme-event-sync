@@ -31,21 +31,25 @@ const getGroups = async () => get('groups');
 
 const colorMap = {
   'blk': 'black',
-  'char': 'charcoal'
+  'char': 'charcoal',
+	'gry': 'grey',
+	'crl': 'coral',
+	'purp': 'purple',
+	'pink': 'pink',
+  'lt gry': 'light grey'
 };
 
 const extractName = (name, calName, teamName) => {
   // Ace (Teal) vs. Tracy's #1 Fans! (blk) (Beach Volleyball - Coed 3v3 - Mon - Spring 2 '21)
-  console.log('extracting name');
-	console.log('name: ', name);
-	console.log('cal : ', calName);
 	let newName =  name.split(`(${calName}`)[0].trim();
 	// remove from 'Ace (Teal) vs. Tracy's #1 Fans! (blk)'
-	newName = newName.replace(/(Ace )([(A-Za-z)]{0,8})/, '$1').replace('  ', ' ');
+	const nameRegExp = new RegExp(`(${teamName} )([(A-Za-z)]{0,8})`);
+	newName = newName.replace(nameRegExp, '$1').replace('  ', ' ');
+//	newName = newName.replace(/(Ace )([(A-Za-z)]{0,8})/, '$1').replace('  ', ' ');
   Object.entries(colorMap).forEach(([key, value]) => {
     newName = newName.replace(`(${key})`, `(${value})`);
 	});
-	console.log('new name: ', newName);
+	console.log('extracted name: ', newName);
 	return newName;
 }
 
@@ -53,13 +57,13 @@ const extractDescription = (location) => {
   // The MAC (Beach #1)
   const [,desc] = location.match(/Beach\ \#([0-9]{0,1})/)
 	console.log('new desc: ', desc);
-	return `court ${desc}`;
+	return `Court ${desc}`;
 }
 
 const postEvent = async (groupId, _event) => {
   return post(`conversations/${groupId}/events/create`, {
     location: {
-			name: '"MAC Sports & Entertainment (The Mac)',
+			name: 'MAC Sports & Entertainment (The Mac)',
 			 address: '8924 Midway West Rd\nRaleigh, NC 27617 \nUnited States',
 			 lat: 35.90874099731445,
 			 lng: -78.75588989257812
@@ -102,9 +106,9 @@ module.exports = {
 //		  ..._event
 //		});
 //  },
-	createEventFromCalendar: async (groupId, calendarEvent, calName) => {
+	createEventFromCalendar: async (groupId, calendarEvent, calName, teamName) => {
 		const ev = {
-      name: extractName(calendarEvent.summary, calName),
+      name: extractName(calendarEvent.summary, calName, teamName),
 			description: extractDescription(calendarEvent.location),
 			start_at: moment(calendarEvent.start.dateTime).format(),
 			// 2021-05-10T22:45:00Z to 
