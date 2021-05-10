@@ -107,6 +107,7 @@ module.exports = {
 //		});
 //  },
 	createEventFromCalendar: async (groupId, calendarEvent, calName, teamName) => {
+		// first check that the event doesnt already exist
 		const ev = {
       name: extractName(calendarEvent.summary, calName, teamName),
 			description: extractDescription(calendarEvent.location),
@@ -116,6 +117,7 @@ module.exports = {
 			end_at: moment(calendarEvent.end.dateTime).format()
 		};
 
-    return postEvent(groupId, ev);
+    return postEvent123(groupId, ev);
 	}
+	// we also need code to cancel/update the event if it changes
 }

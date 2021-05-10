@@ -34,18 +34,18 @@ const GROUPME_TEST = 'test2';
 //   authorize(JSON.parse(content), listEvents);
 // });
 
-/*const configs = {
+const config = {
   '3s': {
-    googleCalendarName: CAL_3V3_VBALL,
-		teamName: 'Ace',
-		groupmeChannel: GROUPME_3_VBALL
-	},
-	'4s': {
-    googleCalendarName: CAL_4V4_VBALL,
-		teamName: 'Notorious D.I.G. 2.0',
-		groupmeChannel: GROUPMY_4_VBALL
-	}
-}*/
+    'googleCalendarName': CAL_3V3_VBALL,
+    'teamName': 'Ace',
+    'groupmeChannel': GROUPME_3_VBALL
+  },
+  '4s': {
+    'googleCalendarName': CAL_4V4_VBALL,
+    'teamName': 'Notorious D.I.G. 2.0',
+    'groupmeChannel': GROUPMY_4_VBALL
+  }
+};
 
 
 (async () => {
