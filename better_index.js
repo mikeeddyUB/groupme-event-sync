@@ -4,7 +4,12 @@ const fs = require('fs');
 const readline = require('readline');
 const { google } = require('googleapis');
 const moment = require('moment');
-
+const {
+  createEventFromCalendar,
+	get, 
+	getGroupByName, 
+	postEvent 
+} = require('./groupme');
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
@@ -16,6 +21,11 @@ const CREDENTIAL_PATH = 'credentials.json';
 
 const CAL_4V4_VBALL = `Beach Volleyball - Coed 4v4 - Thurs - Spring 2 '21`;
 const CAL_3V3_VBALL = `Beach Volleyball - Coed 3v3 - Mon - Spring 2 '21`;
+
+const GROUPME_3_VBALL = '3s';
+const GROUPMY_4_VBALL = '4s volleyball';
+
+const GROUPME_TEST = 'test2';
 
 // Load client secrets from a local file.
 // fs.readFile(CREDENTIAL_PATH, (err, content) => {
@@ -48,6 +58,24 @@ const CAL_3V3_VBALL = `Beach Volleyball - Coed 3v3 - Mon - Spring 2 '21`;
 		});
     //const events = await listCalendars(client, {});
     console.log('custom list events: ', events);
+    const ev = events[0];
+		// const getResponse = await get('groups');
+		// console.log('get: ', getResponse);
+
+		const group = await getGroupByName(GROUPME_TEST);
+		console.log('group: ', group);
+		const postResult = await createEventFromCalendar(group.id, ev, CAL_3V3_VBALL);
+//		const postResult = await postEvent(group.id, {
+//		  name: ev.summary, // regex this to get make it shorter
+//			description: 'test desc', // maybe add the court here?
+//			// start_at: '2021-05-10T12:30:00-04:00',
+//			start_at: moment(ev.start.dateTime).format(),
+//			// momentDate.format('YYYY-MM-DDTHH:mm:ss')
+//			// momentDate.format()
+//			// end_at: '2021-05-10T12:45:00-04:00'
+//			end_at: moment(ev.end.dateTime).format()
+//		});
+		console.log('postResult: ', postResult);
   } catch(e) {
     console.error('SAD: ', e);
   }
