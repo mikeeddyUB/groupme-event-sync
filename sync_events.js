@@ -12,9 +12,24 @@ const constants = require('./constants');
 // - handle modifying an event if the time or team is different
 // - handle cancelled events
 
+const args = process.argv;
+let configToUse;
+if (args.length === 3) {
+  configToUse = args[2];
+}
+
 (async () => {
   try {
-    const options = config['test'];
+    if (!configToUse) {
+      console.log('missing config argument, expected one of: ', Object.keys(config).join(', '));
+      return;
+    }
+    const options = config[configToUse];
+    if (!options) {
+      console.log('invalid config, expected one of: ', Object.keys(config).join(', '));
+      return;
+    }
+    console.log('Using config: ', configToUse);
     const credentialContent = await fs.readFileSync(constants.GOOGLE_CREDENTIAL_PATH);
 		const creds = JSON.parse(credentialContent);
     const { installed: { client_secret, client_id, redirect_uris } } = creds;
