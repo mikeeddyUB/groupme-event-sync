@@ -60,7 +60,7 @@ const config = {
     client.setCredentials(token);
 
 		const cal = await getCalendarByName(client, CAL_3V3_VBALL);
-		console.log('found calendar: ', cal);
+		//console.log('found calendar: ', cal);
 		const now = moment();
     const events = await listEvents2(client, {
 			calendarId: cal.id, // 'primary',
@@ -73,7 +73,8 @@ const config = {
     //const events = await listCalendars(client, {});
     // console.log('custom list events: ', events);
     const group = await getGroupByName(GROUPME_TEST);
-		console.log('group: ', group);
+		console.log('group: ', group.name);
+		console.log('events: ', events.length);
 		await Promise.all(events.map(async (ev) => {
 		  const postResult = await createEventFromCalendar(group.id, ev, CAL_3V3_VBALL, 'Ace');
 		  console.log('postResult: ', postResult);

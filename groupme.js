@@ -9,12 +9,7 @@ const version = 'v3';
 const BASE_URL = `https://api.groupme.com/${version}/`;
 
 const get = async (url) => {
-  // https://api.groupme.com/v3/groups
-  const response = await axios.get(BASE_URL + url, {
-    params: {
-      token: token
-    }
-  });
+  const response = await axios.get(BASE_URL + url, { params: { token } });
   return response.data.response;
 }
 
@@ -64,9 +59,9 @@ const postEvent = async (groupId, _event) => {
   return post(`conversations/${groupId}/events/create`, {
     location: {
 			name: 'MAC Sports & Entertainment (The Mac)',
-			 address: '8924 Midway West Rd\nRaleigh, NC 27617 \nUnited States',
-			 lat: 35.90874099731445,
-			 lng: -78.75588989257812
+			address: '8924 Midway West Rd\nRaleigh, NC 27617 \nUnited States',
+			lat: 35.90874099731445,
+			lng: -78.75588989257812
 		},
 		is_all_day: false,
 		timezone:'America/New_York',
@@ -75,41 +70,49 @@ const postEvent = async (groupId, _event) => {
 	});
 }
 
+const getGroupByName = async (name) => { 
+	const groups = await getGroups();                                                                 
+	const group = groups.find((group) => group.name === name);                                        
+	if (!group) {                                                                                     
+	  throw new Error(`group ${name} does not exist`);                                                
+	}                                                                                                 
+	return group;                                                                                     
+}
+
+// gets active events only
+const getGroupmeEvents = async (groupId) => {
+  const messages = await get(`groups/${groupId}/messages`);
+  return messages.filter((message) => {
+		// make sure it has an event field AND isn't cancelled
+    return message.event && message.event.type !== 'calendar.event.cancelled'; // cancelled, created, user.notgoing
+	}).map((message) => {
+    return message.event.data.event;
+	});
+}
+
+const getGroupmeEventByName = async (groupId, eventName) => {
+  const groupmeEvents = await getGroupmeEvents(groupId);
+	return groupmeEvents.find((e) => e.name === eventName);
+}
+
 module.exports = {
 	get,
 	post,
 	getGroups,
-	getGroupByName: async (name) => {
-    const groups = await getGroups();
-		const group = groups.find((group) => group.name === name);
-		if (!group) {
-      throw new Error(`group ${name} does not exist`);
-		}
-		return group;
-	},
-	postEvent: postEvent,
-	// postEvent: async (groupId, _event) => {
-    // https://api.groupme.com/v3/conversations/68165878/events/create
-		//
-		// {"name":"fake event","description":"desc","location":{"name":"MAC Sports & Entertainment (The Mac)","address":"8924 Midway West Rd\nRaleigh, NC 27617 \nUnited States","lat":35.90874099731445,"lng":-78.75588989257812},"start_at":"2021-05-10T12:30:00-04:00","end_at":"2021-05-10T12:45:00-04:00","is_all_day":false,"timezone":"America/New_York","reminders":[]}
-		//
-//		return post(`conversations/${groupId}/events/create`, { 
-//			location: {
-//		    name: '"MAC Sports & Entertainment (The Mac)',
-//				address: '8924 Midway West Rd\nRaleigh, NC 27617 \nUnited States',
-//				lat: 35.90874099731445,
-//				lng: -78.75588989257812
-//		  },
-//		  is_all_day: false,
-//		  timezone:'America/New_York',
-//		  reminders: [],
-//		  ..._event
-//		});
-//  },
+	getGroupByName,
+	getGroupmeEvents,
+	getGroupmeEventByName,
+	postEvent,
 	createEventFromCalendar: async (groupId, calendarEvent, calName, teamName) => {
 		// first check that the event doesnt already exist
+		const name = extractName(calendarEvent.summary, calName, teamName);
+		const existingEvent = await getGroupmeEventByName(groupId);
+		if (existingEvent) {
+      console.log(`event ${name} already exists`);
+			return;
+		}
 		const ev = {
-      name: extractName(calendarEvent.summary, calName, teamName),
+      name,
 			description: extractDescription(calendarEvent.location),
 			start_at: moment(calendarEvent.start.dateTime).format(),
 			// 2021-05-10T22:45:00Z to 
@@ -121,3 +124,4 @@ module.exports = {
 	}
 	// we also need code to cancel/update the event if it changes
 }
+
