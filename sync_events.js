@@ -39,10 +39,9 @@ if (args.length === 3) {
     const token = JSON.parse(tokenContent);
     client.setCredentials(token);
 
-		// client, CAL_3V3_VBALL
 		const cal = await getCalendarByName(client, options.googleCalendarName);
-		//console.log('found calendar: ', cal);
-		const now = moment();
+
+    const now = moment();
     const events = await listEvents(client, {
 			calendarId: cal.id,
 		  timeMin: now.toISOString(),
