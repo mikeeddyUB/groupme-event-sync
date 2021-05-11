@@ -6,17 +6,7 @@ const moment = require('moment');
 const { createEventFromCalendar,get, getGroupByName, postEvent } = require('./groupme');
 const { listEvents, getCalendarByName } = require('./google');
 const config = require('./config');
-
-
-// If modifying these scopes, delete token.json.
-const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
-// The file token.json stores the user's access and refresh tokens, and is
-// created automatically when the authorization flow completes for the first
-// time.
-// generated from oAuth
-const TOKEN_PATH = 'token.json';
-// downloaded from https://console.cloud.google.com/apis/credentials?project=singular-citron-312417
-const CREDENTIAL_PATH = 'credentials.json';
+const constants = require('./constants');
 
 // TO ADD:
 // - handle modifying an event if the time or team is different
@@ -25,11 +15,11 @@ const CREDENTIAL_PATH = 'credentials.json';
 (async () => {
   try {
     const options = config['test'];
-    const credentialContent = await fs.readFileSync(CREDENTIAL_PATH);
+    const credentialContent = await fs.readFileSync(constants.GOOGLE_CREDENTIAL_PATH);
 		const creds = JSON.parse(credentialContent);
     const { installed: { client_secret, client_id, redirect_uris } } = creds;
     const client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
-    const tokenContent = await fs.readFileSync(TOKEN_PATH);
+    const tokenContent = await fs.readFileSync(constants.GOOGLE_TOKEN_PATH);
 		// if this throws, we need to create a token
     const token = JSON.parse(tokenContent);
     client.setCredentials(token);
@@ -61,13 +51,14 @@ const CREDENTIAL_PATH = 'credentials.json';
     console.error('SAD: ', e);
   }
 })()
+
 // make this a promise
 function authorize(credentials, callback) {
   const {client_secret, client_id, redirect_uris} = credentials.installed;
   const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
 
   // Check if we have previously stored a token.
-  fs.readFile(TOKEN_PATH, (err, token) => {
+  fs.readFile(constants.GOOGLE_TOKEN_PATH, (err, token) => {
     if (err) return getAccessToken(oAuth2Client, callback);
     oAuth2Client.setCredentials(JSON.parse(token));
     callback(oAuth2Client);
@@ -83,7 +74,7 @@ function authorize(credentials, callback) {
 function getAccessToken(oAuth2Client, callback) {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
-    scope: SCOPES,
+    scope: constants.SCOPES,
   });
   console.log('Authorize this app by visiting this url:', authUrl);
   const rl = readline.createInterface({
@@ -96,9 +87,9 @@ function getAccessToken(oAuth2Client, callback) {
       if (err) return console.error('Error retrieving access token', err);
       oAuth2Client.setCredentials(token);
       // Store the token to disk for later program executions
-      fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
+      fs.writeFile(constants.GOOGLE_TOKEN_PATH, JSON.stringify(token), (err) => {
         if (err) return console.error(err);
-        console.log('Token stored to', TOKEN_PATH);
+        console.log('Token stored to', constants.GOOGLE_TOKEN_PATH);
       });
       callback(oAuth2Client);
     });
@@ -129,8 +120,3 @@ function listEventsOld(auth) {
     }
   });
 }
-
-module.exports = {
-  SCOPES,
-  listEvents,
-};

@@ -1,17 +1,14 @@
 const axios = require('axios');
 const fs = require('fs');
 const moment = require('moment');
+const constants = require('./constants');
 
-const GROUPME_TOKEN_PATH = 'groupme_token';
-
-const token = fs.readFileSync(GROUPME_TOKEN_PATH).toString().replace(/\r?\n|\r/g, "");;
-const version = 'v3';
-const BASE_URL = `https://api.groupme.com/${version}/`;
+const token = fs.readFileSync(constants.GROUPME_TOKEN_PATH).toString().replace(/\r?\n|\r/g, "");;
 
 const get = async (url, params) => {
 	let response;
 	// try {
-		response = await axios.get(BASE_URL + url, { params: { token, ...params } });
+		response = await axios.get(constants.BASE_GROUPME_URL + url, { params: { token, ...params } });
 		// console.log(response)
 		return response.data.response;
 	// } catch (e) {
@@ -20,7 +17,7 @@ const get = async (url, params) => {
 }
 
 const post = async (url, payload) => {
-  const response = await axios.post(BASE_URL + url, payload, { 
+  const response = await axios.post(constants.BASE_GROUPME_URL + url, payload, { 
 		params: { 
 			token: token
 		}
