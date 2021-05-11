@@ -8,9 +8,15 @@ const token = fs.readFileSync(GROUPME_TOKEN_PATH).toString().replace(/\r?\n|\r/g
 const version = 'v3';
 const BASE_URL = `https://api.groupme.com/${version}/`;
 
-const get = async (url) => {
-  const response = await axios.get(BASE_URL + url, { params: { token } });
-  return response.data.response;
+const get = async (url, params) => {
+	let response;
+	// try {
+		response = await axios.get(BASE_URL + url, { params: { token, ...params } });
+		// console.log(response)
+		return response.data.response;
+	// } catch (e) {
+		// console.log(response);
+	// }
 }
 
 const post = async (url, payload) => {
@@ -34,24 +40,32 @@ const colorMap = {
   'lt gry': 'light grey'
 };
 
+const hasColors = (name) => Object.keys(colorMap).some((abrvColor) => name.includes(`(${abrvColor})`))
+
 const extractName = (name, calName, teamName) => {
-  // Ace (Teal) vs. Tracy's #1 Fans! (blk) (Beach Volleyball - Coed 3v3 - Mon - Spring 2 '21)
-	let newName =  name.split(`(${calName}`)[0].trim();
+	// Ace (Teal) vs. Tracy's #1 Fans! (blk) (Beach Volleyball - Coed 3v3 - Mon - Spring 2 '21)
+	// Notorious D.I.G. 2.0 vs. Setsy and we know it (Beach Volleyball - Coed 4v4 - Thurs - Spring 2 '21)
+	// 
+	let newName =  name.split(`(${calName})`)[0].trim();
+	if (!hasColors(newName)) {
+	  console.log(`extracted name: [${newName}]`);
+		return newName;
+	}
 	// remove from 'Ace (Teal) vs. Tracy's #1 Fans! (blk)'
-	const nameRegExp = new RegExp(`(${teamName} )([(A-Za-z)]{0,8})`);
+	const nameRegExp = new RegExp(`(${teamName} )([(A-Za-z .)]{0,8})`);
 	newName = newName.replace(nameRegExp, '$1').replace('  ', ' ');
 //	newName = newName.replace(/(Ace )([(A-Za-z)]{0,8})/, '$1').replace('  ', ' ');
   Object.entries(colorMap).forEach(([key, value]) => {
     newName = newName.replace(`(${key})`, `(${value})`);
 	});
-	console.log('extracted name: ', newName);
+	console.log(`extracted name: [${newName}]`);
 	return newName;
 }
 
 const extractDescription = (location) => {
   // The MAC (Beach #1)
-  const [,desc] = location.match(/Beach\ \#([0-9]{0,1})/)
-	console.log('new desc: ', desc);
+  const [,desc] = location.match(/Beach\ \#([0-9]{0,1})/);
+	// console.log('new desc: ', desc);
 	return `Court ${desc}`;
 }
 
@@ -66,6 +80,7 @@ const postEvent = async (groupId, _event) => {
 		is_all_day: false,
 		timezone:'America/New_York',
 		reminders: [],
+		going: [],
 		..._event
 	});
 }
@@ -79,20 +94,36 @@ const getGroupByName = async (name) => {
 	return group;                                                                                     
 }
 
-// gets active events only
 const getGroupmeEvents = async (groupId) => {
-  const messages = await get(`groups/${groupId}/messages`);
-  return messages.filter((message) => {
-		// make sure it has an event field AND isn't cancelled
-    return message.event && message.event.type !== 'calendar.event.cancelled'; // cancelled, created, user.notgoing
-	}).map((message) => {
-    return message.event.data.event;
-	});
+	const { messages } = await get(`groups/${groupId}/messages`);
+	const eventMessages = [];
+	for (const message of messages) {
+		if (!message.event || !message.event.data.event.id) {
+			continue;
+		}
+		const event = await getEvent(groupId, message.event.data.event.id);
+		if (!event.deleted_at) {
+		  eventMessages.push(event);
+		}
+	}
+	// console.log('events: ', eventMessages)
+	return eventMessages;
 }
 
 const getGroupmeEventByName = async (groupId, eventName) => {
   const groupmeEvents = await getGroupmeEvents(groupId);
-	return groupmeEvents.find((e) => e.name === eventName);
+	// return groupmeEvents.find((e) => e.name === eventName);
+
+	return groupmeEvents.find((e) => {
+		// console.log(`groupme event: ${e.name} === ${eventName}`);
+		return e.name === eventName;
+	});
+}
+
+const getEvent = async (groupId, eventId) => {
+	// https://api.groupme.com/v3/conversations/68165878/events/show?event_id=ded340d7c152460f8428f49f0c9b5c29
+	const { event } = await get(`conversations/${groupId}/events/show`, { event_id: eventId });
+	return event;
 }
 
 module.exports = {
@@ -102,13 +133,14 @@ module.exports = {
 	getGroupByName,
 	getGroupmeEvents,
 	getGroupmeEventByName,
+	getEvent,
 	postEvent,
 	createEventFromCalendar: async (groupId, calendarEvent, calName, teamName) => {
 		// first check that the event doesnt already exist
 		const name = extractName(calendarEvent.summary, calName, teamName);
-		const existingEvent = await getGroupmeEventByName(groupId);
+		const existingEvent = await getGroupmeEventByName(groupId, name);
 		if (existingEvent) {
-      console.log(`event ${name} already exists`);
+      console.log(`event "${name}" already exists`);
 			return;
 		}
 		const ev = {
@@ -120,7 +152,7 @@ module.exports = {
 			end_at: moment(calendarEvent.end.dateTime).format()
 		};
 
-    return postEvent123(groupId, ev);
+    return postEvent(groupId, ev);
 	}
 	// we also need code to cancel/update the event if it changes
 }

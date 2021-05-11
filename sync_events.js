@@ -1,5 +1,4 @@
 
-// [START calendar_quickstart]
 const fs = require('fs');
 const readline = require('readline');
 const { google } = require('googleapis');
@@ -10,13 +9,20 @@ const {
 	getGroupByName, 
 	postEvent 
 } = require('./groupme');
+const {
+  listEvents,
+  getCalendarByName
+} = require('./google');
+
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
+// generated from oAuth
 const TOKEN_PATH = 'token.json';
+// downloaded from https://console.cloud.google.com/apis/credentials?project=singular-citron-312417
 const CREDENTIAL_PATH = 'credentials.json';
 
 const CAL_4V4_VBALL = `Beach Volleyball - Coed 4v4 - Thurs - Spring 2 '21`;
@@ -31,7 +37,7 @@ const GROUPME_TEST = 'test2';
 // fs.readFile(CREDENTIAL_PATH, (err, content) => {
 //   if (err) return console.log('Error loading client secret file:', err);
 //   // Authorize a client with credentials, then call the Google Calendar API.
-//   authorize(JSON.parse(content), listEvents);
+//   authorize(JSON.parse(content), listEventsOld);
 // });
 
 const config = {
@@ -44,12 +50,18 @@ const config = {
     'googleCalendarName': CAL_4V4_VBALL,
     'teamName': 'Notorious D.I.G. 2.0',
     'groupmeChannel': GROUPMY_4_VBALL
-  }
+  },
+	'test': {
+    'googleCalendarName': CAL_4V4_VBALL,
+    'teamName': 'Notorious D.I.G. 2.0',
+    'groupmeChannel': GROUPME_TEST
+	}
 };
 
 
 (async () => {
   try {
+    const options = config['test'];
     const credentialContent = await fs.readFileSync(CREDENTIAL_PATH);
 		const creds = JSON.parse(credentialContent);
     const { installed: { client_secret, client_id, redirect_uris } } = creds;
@@ -59,11 +71,12 @@ const config = {
     const token = JSON.parse(tokenContent);
     client.setCredentials(token);
 
-		const cal = await getCalendarByName(client, CAL_3V3_VBALL);
+		// client, CAL_3V3_VBALL
+		const cal = await getCalendarByName(client, options.googleCalendarName);
 		//console.log('found calendar: ', cal);
 		const now = moment();
-    const events = await listEvents2(client, {
-			calendarId: cal.id, // 'primary',
+    const events = await listEvents(client, {
+			calendarId: cal.id,
 		  timeMin: now.toISOString(),
 			timeMax: now.add(5, 'd').toISOString(),
 		  maxResults: 10,
@@ -72,12 +85,14 @@ const config = {
 		});
     //const events = await listCalendars(client, {});
     // console.log('custom list events: ', events);
-    const group = await getGroupByName(GROUPME_TEST);
-		console.log('group: ', group.name);
-		console.log('events: ', events.length);
+    const group = await getGroupByName(options.groupmeChannel);
+		// console.log('group: ', group.name);
+		// console.log('events: ', events.length);
 		await Promise.all(events.map(async (ev) => {
-		  const postResult = await createEventFromCalendar(group.id, ev, CAL_3V3_VBALL, 'Ace');
-		  console.log('postResult: ', postResult);
+      const postResult = await createEventFromCalendar(group.id, ev, options.googleCalendarName, options.teamName);
+      if (postResult) {
+		    console.log('postResult: ', postResult);
+      }
 	  }));
   } catch(e) {
     console.error('SAD: ', e);
@@ -127,55 +142,7 @@ function getAccessToken(oAuth2Client, callback) {
   });
 }
 
-const listEvents2 = async (client, listOptions) => {
-  return new Promise((res, rej) => {
-    const calendar = google.calendar({version: 'v3', auth: client});
-    calendar.events.list(listOptions, (err, result) => {
-      if (err) {
-        rej(err);
-        return;
-      }
-      const events = result.data.items;
-      res(events || []);
-    });
-  });
-};
-
-const listCalendars = async (client, options) => {
-  return new Promise((res, rej) => {
-	  const googleClient = google.calendar({version: 'v3', auth: client});
-		googleClient.calendarList.list(options, (err, result) => {
-		  if (err) {
-        rej(err);
-				return;
-			}
-			// console.log(`cal names: ${JSON.stringify(result.data.items.map(i => i.summary))}`);
-			res(result.data.items);
-		});
-	});
-}
-
-const getCalendarByName = async (client, name) => {
-  const cals = await listCalendars(client, {});
-  const cal = cals.find((cal) => cal.summary === name);
-  // const cal = cals.find((cal) => {
-	//   console.log(`comparing ${cal.summary} and ${name} === ${cal.summary === name}`);
-	// });
-	if (!cal) {
-    throw new Error(`calendar with summary ${name} does not exist`);
-	}
-	return cal
-}
-
-const respListHandler = (res, rej) => (err, result) => {
-  if (err) {
-    rej(err);
-		return
-	}
-	res(result.data.items);
-}
-
-function listEvents(auth) {
+function listEventsOld(auth) {
 	const now = moment();
   const calendar = google.calendar({version: 'v3', auth});
   calendar.events.list({
