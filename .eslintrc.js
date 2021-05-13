@@ -23,7 +23,7 @@ module.exports = {
     'no-await-in-loop': 'off',
     'no-use-before-define': 'off',
     'comma-dangle': 'off',
-    semi: ['error', 'never']
+    semi: ['error', 'never', { beforeStatementContinuationChars: 'always' }]
   },
   settings: {
     'import/resolver': {

@@ -8,6 +8,129 @@ const token = fs
   .toString()
   .replace(/\r?\n|\r/g, '')
 
+export type Role = 'admin' | 'owner'
+export type DeletionMode = 'sender' | 'creator'
+export interface Member {
+  user_id: string
+  name: string
+  nickname: string
+  image_url: string
+  id: string
+  muted: boolean
+  autokicked: boolean
+  roles: Role[]
+}
+
+export interface Attachment {
+  event_id: string
+  view: 'full'
+  type: 'event'
+}
+
+export interface EventBrief {
+  id: string
+  name: string
+}
+
+export interface Location {
+  lat: number
+  lng: number
+  name: string
+  address: string
+}
+
+export interface EventDetailed {
+  name: string
+  description: string
+  location: Location
+  start_at: string
+  end_at: string
+  is_all_day: boolean
+  timezone: string
+  reminders: any[]
+  conversation_id: string
+  event_id: string
+  creator_id: string
+  going: string[]
+  not_going: string[]
+  created_at: string
+  updated_at: string
+  deleted_at: string
+}
+
+export interface User {
+  id: string
+  nickname: string
+}
+export interface EventData {
+  event: EventBrief
+  url: string
+  user: User
+}
+
+export interface Event {
+  type: 'calendar.event.created'
+  data: EventData
+}
+
+export interface Message {
+  attachments: Attachment[]
+  avatar_url: string | null
+  created_at: number
+  favorited_by: any[] // not sure
+  group_id: string
+  id: string
+  name: string
+  sender_id: string
+  sender_type: string
+  source_guid: string
+  system: boolean
+  text: string
+  user_id: string
+  platform: string // 'gm'?
+  event: Event
+}
+
+export interface MessagePreview {
+  nickname: string
+  text: string
+  image_url: string
+  attachments: Attachment[]
+}
+export interface MessageBrief {
+  count: number
+  last_message_id: string
+  last_message_created_at: number
+  preview: MessagePreview
+}
+
+export interface Group {
+  id: string // id and group id appear to be the same
+  group_id: string
+  name: string
+  phone_number: string
+  type: 'private' | 'public' // assuming public
+  description: string
+  image_url: string | null
+  creator_user_id: string
+  created_at: number // 1620743540
+  updated_at: number
+  muted_until: number | null
+  office_mode: boolean
+  share_url: string
+  share_qr_code_url: string
+  members: Member[]
+  messages: MessageBrief[]
+  max_members: number
+  theme_name: string | null
+  like_icon: string | null
+  requires_approval: boolean
+  show_join_question: boolean
+  join_question: null
+  message_deletion_period: number
+  message_deletion_mode: DeletionMode[]
+}
+
 export const get = async <T>(url: string, params = {}): Promise<T> => {
   const response = await axios.get<T>(BASE_GROUPME_URL + url, { params: { token, ...params } })
   return (response.data as any).response
@@ -22,7 +145,7 @@ export const post = async <T>(url: string, payload: Record<string, any>): Promis
   return (response.data as any).response
 }
 
-export const getGroups = async (): Promise<any[]> => get('groups')
+export const getGroups = async (): Promise<Group[]> => get<Group[]>('groups')
 
 const colorMap: Record<string, string> = {
   blk: 'black',
@@ -56,7 +179,7 @@ const extractName = (name: string, calName: string, teamName: string): string =>
   return newName
 }
 
-const extractDescription = (location) => {
+const extractDescription = (location: string): string => {
   // The MAC (Beach #1)
   const [, desc] = location.match(/Beach #([0-9]{0,1})/)
   // const [, desc] = location.match(/Beach\ \#([0-9]{0,1})/);
@@ -79,7 +202,7 @@ export const postEvent = async (groupId: string, _event): Promise<any> =>
     ..._event
   })
 
-export const getGroupByName = async (name: string) => {
+export const getGroupByName = async (name: string): Promise<Group> => {
   const groups = await getGroups()
   const group = groups.find((g) => g.name === name)
   if (!group) {
@@ -89,13 +212,15 @@ export const getGroupByName = async (name: string) => {
 }
 
 export const getGroupmeEvents = async (groupId: string) => {
-  const { messages } = await get(`groups/${groupId}/messages`)
+  const { messages }: { messages: Message[] } = await get(`groups/${groupId}/messages`)
+  // console.log('messages: ', JSON.stringify(messages, null, 2))
   const eventMessages = []
   for (const message of messages) {
     if (!message.event || !message.event.data.event.id) {
       continue
     }
     const event = await getEvent(groupId, message.event.data.event.id)
+    // console.log('event: ', event)
     if (!event.deleted_at) {
       eventMessages.push(event)
     }
@@ -108,14 +233,10 @@ export const getGroupmeEventByName = async (groupId: string, eventName: string) 
   const groupmeEvents = await getGroupmeEvents(groupId)
   // return groupmeEvents.find((e) => e.name === eventName);
 
-  return groupmeEvents.find(
-    (e) =>
-      // console.log(`groupme event: ${e.name} === ${eventName}`);
-      e.name === eventName
-  )
+  return groupmeEvents.find((e) => e.name === eventName)
 }
 
-export const getEvent = async (groupId: string, eventId: string) => {
+export const getEvent = async (groupId: string, eventId: string): Promise<EventDetailed> => {
   // https://api.groupme.com/v3/conversations/68165878/events/show?event_id=ded340d7c152460f8428f49f0c9b5c29
   const { event } = await get(`conversations/${groupId}/events/show`, { event_id: eventId })
   return event

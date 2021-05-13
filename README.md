@@ -1,4 +1,3 @@
 TODO:
- - convert to typescript
- - add linting
+ - add missing types
  - basic tests?
