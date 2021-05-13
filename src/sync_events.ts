@@ -1,10 +1,9 @@
-
 import * as fs from 'fs';
 import * as readline from 'readline';
 import * as moment from 'moment';
 import { google } from 'googleapis';
 
-import { createEventFromCalendar, get, getGroupByName, postEvent } from './groupme';
+import { createEventFromCalendar, getGroupByName } from './groupme';
 import { listEvents, getCalendarByName } from './google';
 import config from './config';
 import * as constants from './constants';
@@ -39,44 +38,44 @@ if (args.length === 3) {
     }
     console.log('Using config: ', configToUse);
     const credentialContent: Buffer = await fs.readFileSync(constants.GOOGLE_CREDENTIAL_PATH);
-		const creds = JSON.parse(credentialContent.toString());
+    const creds = JSON.parse(credentialContent.toString());
     const { installed: { client_secret, client_id, redirect_uris } } = creds;
     const client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
     const tokenContent: Buffer = await fs.readFileSync(constants.GOOGLE_TOKEN_PATH);
-		// if this throws, we need to create a token
+    // if this throws, we need to create a token
     const token = JSON.parse(tokenContent.toString());
     client.setCredentials(token);
 
-		const cal = await getCalendarByName(client, options.googleCalendarName);
+    const cal = await getCalendarByName(client, options.googleCalendarName);
 
     const now = moment();
     const events = await listEvents(client, {
-			calendarId: cal.id,
+      calendarId: cal.id,
 		  timeMin: now.toISOString(),
-			timeMax: now.add(5, 'd').toISOString(),
+      timeMax: now.add(5, 'd').toISOString(),
 		  maxResults: 10,
 		  singleEvents: true,
 		  orderBy: 'startTime',
-		});
-    //const events = await listCalendars(client, {});
+    });
+    // const events = await listCalendars(client, {});
     // console.log('custom list events: ', events);
     const group = await getGroupByName(options.groupmeChannel);
-		// console.log('group: ', group.name);
-		// console.log('events: ', events.length);
-		await Promise.all(events.map(async (ev) => {
+    // console.log('group: ', group.name);
+    // console.log('events: ', events.length);
+    await Promise.all(events.map(async (ev) => {
       const postResult = await createEventFromCalendar(group.id, ev, options.googleCalendarName, options.teamName);
       if (postResult) {
 		    console.log('postResult: ', postResult);
       }
 	  }));
-  } catch(e) {
+  } catch (e) {
     console.error('SAD: ', e);
   }
-})()
+})();
 
 // make this a promise
 function authorize(credentials, callback) {
-  const {client_secret, client_id, redirect_uris} = credentials.installed;
+  const { client_secret, client_id, redirect_uris } = credentials.installed;
   const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
 
   // Check if we have previously stored a token.
@@ -119,17 +118,17 @@ function getAccessToken(oAuth2Client, callback) {
 }
 
 function listEventsOld(auth) {
-	const now = moment();
-  const calendar = google.calendar({version: 'v3', auth});
+  const now = moment();
+  const calendar = google.calendar({ version: 'v3', auth });
   calendar.events.list({
     calendarId: 'primary',
     timeMin: now.toISOString(),
-		timeMax: now.add(5, 'd').toISOString(),
+    timeMax: now.add(5, 'd').toISOString(),
     maxResults: 5,
     singleEvents: true,
     orderBy: 'startTime',
   }, (err, res) => {
-    if (err) return console.log('The API returned an error: ' + err);
+    if (err) return console.log(`The API returned an error: ${err}`);
     const events = res.data.items;
     if (events.length) {
       console.log('Upcoming 10 events:');
