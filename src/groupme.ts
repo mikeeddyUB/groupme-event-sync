@@ -1,5 +1,6 @@
 import axios from 'axios'
 import * as fs from 'fs'
+import { calendar_v3 } from 'googleapis'
 import * as moment from 'moment'
 import { BASE_GROUPME_URL, GROUPME_TOKEN_PATH } from './constants'
 
@@ -187,7 +188,7 @@ const extractDescription = (location: string): string => {
   return `Court ${desc}`
 }
 
-export const postEvent = async (groupId: string, _event): Promise<any> =>
+export const postEvent = async (groupId: string, _event: EventDetailed): Promise<any> =>
   post(`conversations/${groupId}/events/create`, {
     location: {
       name: 'MAC Sports & Entertainment (The Mac)',
@@ -244,7 +245,7 @@ export const getEvent = async (groupId: string, eventId: string): Promise<EventD
 
 export const createEventFromCalendar = async (
   groupId: string,
-  calendarEvent,
+  calendarEvent: calendar_v3.Schema$Event,
   calName: string,
   teamName: string
 ): Promise<any | null> => {
@@ -262,7 +263,7 @@ export const createEventFromCalendar = async (
     // 2021-05-10T22:45:00Z to
     // 2021-05-10T12:30:00-04:00
     end_at: moment(calendarEvent.end.dateTime).format()
-  }
+  } as EventDetailed
 
   return postEvent(groupId, ev)
 }
