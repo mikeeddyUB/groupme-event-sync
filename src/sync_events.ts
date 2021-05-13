@@ -1,12 +1,13 @@
 
-const fs = require('fs');
-const readline = require('readline');
-const { google } = require('googleapis');
-const moment = require('moment');
-const { createEventFromCalendar,get, getGroupByName, postEvent } = require('./groupme');
-const { listEvents, getCalendarByName } = require('./google');
-const config = require('./config');
-const constants = require('./constants');
+import * as fs from 'fs';
+import * as readline from 'readline';
+import * as moment from 'moment';
+import { google } from 'googleapis';
+
+import { createEventFromCalendar, get, getGroupByName, postEvent } from './groupme';
+import { listEvents, getCalendarByName } from './google';
+import config from './config';
+import * as constants from './constants';
 
 // TO ADD:
 // - handle modifying an event if the time or team is different
@@ -21,10 +22,14 @@ if (args.length === 3) {
   configToUse = args[2];
 }
 
-(async () => {
+(async (): Promise<void> => {
   try {
     if (!configToUse) {
       console.log('missing config argument, expected one of: ', Object.keys(config).join(', '));
+      return;
+    }
+    if (!config) {
+      console.log('missing config');
       return;
     }
     const options = config[configToUse];
@@ -33,13 +38,13 @@ if (args.length === 3) {
       return;
     }
     console.log('Using config: ', configToUse);
-    const credentialContent = await fs.readFileSync(constants.GOOGLE_CREDENTIAL_PATH);
-		const creds = JSON.parse(credentialContent);
+    const credentialContent: Buffer = await fs.readFileSync(constants.GOOGLE_CREDENTIAL_PATH);
+		const creds = JSON.parse(credentialContent.toString());
     const { installed: { client_secret, client_id, redirect_uris } } = creds;
     const client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
-    const tokenContent = await fs.readFileSync(constants.GOOGLE_TOKEN_PATH);
+    const tokenContent: Buffer = await fs.readFileSync(constants.GOOGLE_TOKEN_PATH);
 		// if this throws, we need to create a token
-    const token = JSON.parse(tokenContent);
+    const token = JSON.parse(tokenContent.toString());
     client.setCredentials(token);
 
 		const cal = await getCalendarByName(client, options.googleCalendarName);
@@ -77,7 +82,7 @@ function authorize(credentials, callback) {
   // Check if we have previously stored a token.
   fs.readFile(constants.GOOGLE_TOKEN_PATH, (err, token) => {
     if (err) return getAccessToken(oAuth2Client, callback);
-    oAuth2Client.setCredentials(JSON.parse(token));
+    oAuth2Client.setCredentials(JSON.parse(token.toString()));
     callback(oAuth2Client);
   });
 }

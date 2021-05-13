@@ -1,0 +1,13 @@
+{
+	"compilerOptions": {
+		"moduleResolution": "node",
+		"target": "es2019",
+		"noImplicitAny": false,
+		"removeComments": true,
+		"preserveConstEnums": true,
+		"sourceMap": true,
+		"lib": ["es2017.object"]
+	},
+	"include": ["src/*"],
+	"exclude": ["node_modules", "**/*.spec.ts"]
+}

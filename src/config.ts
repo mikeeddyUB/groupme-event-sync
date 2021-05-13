@@ -14,7 +14,7 @@ const GROUPME_TEST = 'test2';
 // });
 
 // should probably read this in from a file
-module.exports = {
+export default {
   '3s': {
     'googleCalendarName': CAL_3V3_VBALL,
     'teamName': 'Ace',
