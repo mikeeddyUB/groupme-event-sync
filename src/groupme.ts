@@ -16,8 +16,8 @@ export const get = async <T>(url: string, params = {}): Promise<T> => {
 export const post = async <T>(url: string, payload: Record<string, any>): Promise<T> => {
   const response = await axios.post<T>(BASE_GROUPME_URL + url, payload, {
     params: {
-      token,
-    },
+      token
+    }
   });
   return (response.data as any).response;
 };
@@ -31,7 +31,7 @@ const colorMap: Record<string, string> = {
   crl: 'coral',
   purp: 'purple',
   pink: 'pink',
-  'lt gry': 'light grey',
+  'lt gry': 'light grey'
 };
 
 const hasColors = (name: string): boolean => Object.keys(colorMap).some((abrvColor) => name.includes(`(${abrvColor})`));
@@ -48,7 +48,7 @@ const extractName = (name: string, calName: string, teamName: string): string =>
   // remove from 'Ace (Teal) vs. Tracy's #1 Fans! (blk)'
   const nameRegExp = new RegExp(`(${teamName} )([(A-Za-z .)]{0,8})`);
   newName = newName.replace(nameRegExp, '$1').replace('  ', ' ');
-  //	newName = newName.replace(/(Ace )([(A-Za-z)]{0,8})/, '$1').replace('  ', ' ');
+  // newName = newName.replace(/(Ace )([(A-Za-z)]{0,8})/, '$1').replace('  ', ' ');
   Object.entries(colorMap).forEach(([key, value]) => {
     newName = newName.replace(`(${key})`, `(${value})`);
   });
@@ -58,28 +58,30 @@ const extractName = (name: string, calName: string, teamName: string): string =>
 
 const extractDescription = (location) => {
   // The MAC (Beach #1)
-  const [, desc] = location.match(/Beach\ \#([0-9]{0,1})/);
+  const [, desc] = location.match(/Beach #([0-9]{0,1})/);
+  // const [, desc] = location.match(/Beach\ \#([0-9]{0,1})/);
   // console.log('new desc: ', desc);
   return `Court ${desc}`;
 };
 
-export const postEvent = async (groupId: string, _event) => post(`conversations/${groupId}/events/create`, {
-  location: {
-    name: 'MAC Sports & Entertainment (The Mac)',
-    address: '8924 Midway West Rd\nRaleigh, NC 27617 \nUnited States',
-    lat: 35.90874099731445,
-    lng: -78.75588989257812,
-  },
-  is_all_day: false,
-  timezone: 'America/New_York',
-  reminders: [],
-  going: [],
-  ..._event,
-});
+export const postEvent = async (groupId: string, _event): Promise<any> =>
+  post(`conversations/${groupId}/events/create`, {
+    location: {
+      name: 'MAC Sports & Entertainment (The Mac)',
+      address: '8924 Midway West Rd\nRaleigh, NC 27617 \nUnited States',
+      lat: 35.90874099731445,
+      lng: -78.75588989257812
+    },
+    is_all_day: false,
+    timezone: 'America/New_York',
+    reminders: [],
+    going: [],
+    ..._event
+  });
 
 export const getGroupByName = async (name: string) => {
   const groups = await getGroups();
-  const group = groups.find((group) => group.name === name);
+  const group = groups.find((g) => g.name === name);
   if (!group) {
     throw new Error(`group ${name} does not exist`);
   }
@@ -109,7 +111,7 @@ export const getGroupmeEventByName = async (groupId: string, eventName: string) 
   return groupmeEvents.find(
     (e) =>
       // console.log(`groupme event: ${e.name} === ${eventName}`);
-      e.name === eventName,
+      e.name === eventName
   );
 };
 
@@ -123,14 +125,14 @@ export const createEventFromCalendar = async (
   groupId: string,
   calendarEvent,
   calName: string,
-  teamName: string,
-) => {
+  teamName: string
+): Promise<any | null> => {
   // first check that the event doesnt already exist
   const name = extractName(calendarEvent.summary, calName, teamName);
   const existingEvent = await getGroupmeEventByName(groupId, name);
   if (existingEvent) {
     console.log(`event "${name}" already exists`);
-    return;
+    return null;
   }
   const ev = {
     name,
@@ -138,7 +140,7 @@ export const createEventFromCalendar = async (
     start_at: moment(calendarEvent.start.dateTime).format(),
     // 2021-05-10T22:45:00Z to
     // 2021-05-10T12:30:00-04:00
-    end_at: moment(calendarEvent.end.dateTime).format(),
+    end_at: moment(calendarEvent.end.dateTime).format()
   };
 
   return postEvent(groupId, ev);
