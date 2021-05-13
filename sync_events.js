@@ -12,6 +12,9 @@ const constants = require('./constants');
 // - handle modifying an event if the time or team is different
 // - handle cancelled events
 
+// - dont auth with google, just look up the calendar
+//   - possible, but kind of a pain since its not in a well known format
+
 const args = process.argv;
 let configToUse;
 if (args.length === 3) {
