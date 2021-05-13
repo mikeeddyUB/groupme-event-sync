@@ -9,7 +9,7 @@
     "sync": "ts-node --project ./tsconfig.json src/sync_events.ts"
   },
   "prettier": {
-    "semi": true,
+    "semi": false,
     "singleQuote": true,
     "tabWidth": 2,
     "useTabs": false,

@@ -22,7 +22,8 @@ module.exports = {
     'no-continue': 'off',
     'no-await-in-loop': 'off',
     'no-use-before-define': 'off',
-    'comma-dangle': 'off'
+    'comma-dangle': 'off',
+    semi: ['error', 'never']
   },
   settings: {
     'import/resolver': {
@@ -31,4 +32,4 @@ module.exports = {
       }
     }
   }
-};
+}
