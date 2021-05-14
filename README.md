@@ -1,5 +1,4 @@
 TODO:
- - basic testing with jest
  - transpiling with.. babel?
    - get null coalesing 
    - add typo extension (that uses dictionary.txt)

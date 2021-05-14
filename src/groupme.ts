@@ -160,12 +160,10 @@ const colorMap: Record<string, string> = {
   'lt gry': 'light grey'
 }
 
-const hasColors = (name: string): boolean => Object.keys(colorMap).some((abrvColor) => name.includes(`(${abrvColor})`))
-
 export const extractName = (name: string, calName: string, teamName: string): string => {
   // Ace (Teal) vs. Tracy's #1 Fans! (blk) (Beach Volleyball - Coed 3v3 - Mon - Spring 2 '21)
   // Notorious D.I.G. 2.0 vs. Setsy and we know it (Beach Volleyball - Coed 4v4 - Thurs - Spring 2 '21)
-  //
+
   let newName = name.split(`(${calName})`)[0].trim()
 
   const teams = newName.split(' vs. ');
@@ -183,20 +181,6 @@ export const extractName = (name: string, calName: string, teamName: string): st
   })
 
   return `${myTeam} vs. ${theirTeam}` 
-
-
-  // if (!hasColors(newName)) {
-  //   console.log(`[${name}] -> [${newName}]`)
-  //   return newName
-  // }
-  // // remove from 'Ace (Teal) vs. Tracy's #1 Fans! (blk)'
-  // newName = newName.replace(nameRegExp, '$1').replace('  ', ' ')
-  // // newName = newName.replace(/(Ace )([(A-Za-z)]{0,8})/, '$1').replace('  ', ' ');
-  // Object.entries(colorMap).forEach(([key, value]) => {
-  //   newName = newName.replace(`(${key})`, `(${value})`)
-  // })
-  // console.log(`[${name}] -> [${newName}]`)
-  // return newName
 }
 
 const extractDescription = (location: string): string => {
