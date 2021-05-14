@@ -8,5 +8,6 @@
     },
     "[json]": {
         "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
-    }
+    },
+    "editor.minimap.enabled": false
 }
