@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { EINPROGRESS } from 'constants'
 import * as fs from 'fs'
 import { calendar_v3 } from 'googleapis'
 import * as moment from 'moment'
@@ -155,29 +156,47 @@ const colorMap: Record<string, string> = {
   crl: 'coral',
   purp: 'purple',
   pink: 'pink',
+  cor: 'coral',
   'lt gry': 'light grey'
 }
 
 const hasColors = (name: string): boolean => Object.keys(colorMap).some((abrvColor) => name.includes(`(${abrvColor})`))
 
-const extractName = (name: string, calName: string, teamName: string): string => {
+export const extractName = (name: string, calName: string, teamName: string): string => {
   // Ace (Teal) vs. Tracy's #1 Fans! (blk) (Beach Volleyball - Coed 3v3 - Mon - Spring 2 '21)
   // Notorious D.I.G. 2.0 vs. Setsy and we know it (Beach Volleyball - Coed 4v4 - Thurs - Spring 2 '21)
   //
   let newName = name.split(`(${calName})`)[0].trim()
-  if (!hasColors(newName)) {
-    console.log(`extracted name: [${newName}]`)
-    return newName
+
+  const teams = newName.split(' vs. ');
+  if (teams.length !== 2) {
+    // problems
+    throw new Error(`invalid name string [${name}]`)
   }
-  // remove from 'Ace (Teal) vs. Tracy's #1 Fans! (blk)'
-  const nameRegExp = new RegExp(`(${teamName} )([(A-Za-z .)]{0,8})`)
-  newName = newName.replace(nameRegExp, '$1').replace('  ', ' ')
-  // newName = newName.replace(/(Ace )([(A-Za-z)]{0,8})/, '$1').replace('  ', ' ');
+
+  let myTeam = teams.find(team => team.includes(teamName))
+  myTeam = myTeam.split(' (')[0].replace('  ', ' ')
+
+  let theirTeam = teams.find(team => !team.includes(teamName))
   Object.entries(colorMap).forEach(([key, value]) => {
-    newName = newName.replace(`(${key})`, `(${value})`)
+    theirTeam = theirTeam.replace(`(${key})`, `(${value})`)
   })
-  console.log(`extracted name: [${newName}]`)
-  return newName
+
+  return `${myTeam} vs. ${theirTeam}` 
+
+
+  // if (!hasColors(newName)) {
+  //   console.log(`[${name}] -> [${newName}]`)
+  //   return newName
+  // }
+  // // remove from 'Ace (Teal) vs. Tracy's #1 Fans! (blk)'
+  // newName = newName.replace(nameRegExp, '$1').replace('  ', ' ')
+  // // newName = newName.replace(/(Ace )([(A-Za-z)]{0,8})/, '$1').replace('  ', ' ');
+  // Object.entries(colorMap).forEach(([key, value]) => {
+  //   newName = newName.replace(`(${key})`, `(${value})`)
+  // })
+  // console.log(`[${name}] -> [${newName}]`)
+  // return newName
 }
 
 const extractDescription = (location: string): string => {

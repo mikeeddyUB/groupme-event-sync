@@ -41,9 +41,13 @@ const main = async (): Promise<void> => {
     const credentialContent: Buffer = await fs.readFileSync(constants.GOOGLE_CREDENTIAL_PATH)
     const creds = JSON.parse(credentialContent.toString())
     const {
-      installed: { client_secret, client_id, redirect_uris }
+      installed: {
+        client_secret,
+        client_id,
+        redirect_uris: [redirectUri]
+      }
     } = creds
-    const client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0])
+    const client = new google.auth.OAuth2(client_id, client_secret, redirectUri)
     const tokenContent: Buffer = await fs.readFileSync(constants.GOOGLE_TOKEN_PATH)
     // if this throws, we need to create a token
     const token = JSON.parse(tokenContent.toString())
